@@ -1,0 +1,14 @@
+# 虚拟环境
+.venv/
+.venv312/
+
+# 构建产物
+dist/
+build/
+
+# Python 编译缓存
+__pycache__/
+*.pyc
+
+# Claude 本地配置
+.claude/settings.local.json
