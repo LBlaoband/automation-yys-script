@@ -1,0 +1,18 @@
+[project]
+name = "yys-script"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "opencv-python>=4.13.0.92",
+    "pillow>=12.2.0",
+    "uiautomator2>=3.5.2",
+    "customtkinter>=5.2.0",
+]
+
+[project.optional-dependencies]
+build = [
+    "nuitka>=2.7",
+    "ordered-set>=4.1",
+]
