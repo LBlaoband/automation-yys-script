@@ -37,6 +37,8 @@ COMMON_ARGS = [
     "--assume-yes-for-downloads",        # 自动下载 C 编译器等依赖
     "--output-dir=dist",                 # 输出到 dist/ 目录
     "--enable-plugin=tk-inter",          # tkinter 支持
+    "--include-package=customtkinter",   # customtkinter 完整打包
+    "--include-package-data=customtkinter",  # 包含主题/字体等资源文件
     "--include-module=uiautomator2",
     "--include-module=adbutils",
     "--include-module=adbutils._adb",
