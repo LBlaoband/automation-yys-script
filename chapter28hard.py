@@ -102,10 +102,17 @@ try:
         elif click_image(template_win, name="win", threshold=0.8):
             time.sleep(random.uniform(1.5, 2.5))
             click_relative(0.86, 0.83)
-            count += 1
-            print(f"------ 已击败 {count} 队怪物 ------")
+            # 确认是否真的退出了战斗界面
+            time.sleep(2.0)
+            if click_image(template_chapter, name="chapter(确认)", threshold=0.8, do_click=False) or \
+               click_image(template_explore, name="explore(确认)", threshold=0.8, do_click=False) or \
+               click_image(template_exp, name="exp(确认)", threshold=0.8, do_click=False):
+                count += 1
+                print(f"------ 已击败 {count} 队怪物 ------")
+            else:
+                print("  [win 匹配但未确认退出，不计数]")
             idle_count = 0
-            time.sleep(1.5)
+            time.sleep(1.0)
 
         elif click_image(template_chapter, name="chapter", threshold=0.8):
             print("   -> 选择章节")

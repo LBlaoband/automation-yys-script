@@ -1,0 +1,5 @@
+path: yolo
+train: .
+val: .
+nc: 2
+names: ["start", "win"]

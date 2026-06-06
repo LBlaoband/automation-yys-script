@@ -9,6 +9,7 @@ dependencies = [
     "pillow>=12.2.0",
     "uiautomator2>=3.5.2",
     "customtkinter>=5.2.0",
+    "ultralytics>=8.4.60",
 ]
 
 [project.optional-dependencies]

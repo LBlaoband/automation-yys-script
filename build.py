@@ -29,6 +29,7 @@ TARGETS = {
     "gui": {
         "script": "gui.py",
         "name": "yys-gui",
+        "icon": "icon.ico",
     },
 }
 
@@ -39,8 +40,9 @@ COMMON_ARGS = [
     "--enable-plugin=tk-inter",          # tkinter 支持
     "--include-package=customtkinter",   # customtkinter 完整打包
     "--include-package-data=customtkinter",  # 包含主题/字体等资源文件
-    "--include-module=uiautomator2",
-    "--include-module=adbutils",
+    "--include-package=uiautomator2",    # uiautomator2 完整打包
+    "--include-package-data=uiautomator2",  # 包含 u2.jar 等资源文件
+    "--include-package=adbutils",        # adbutils 完整打包
     "--include-module=adbutils._adb",
     "--include-module=adbutils._device",
     "--include-module=adbutils._device_base",
@@ -114,12 +116,17 @@ def copy_resources(script_name: str):
     adb_bin_dir = find_adbutils_binaries()
     adb_dst = os.path.join(dist_dir, "adbutils", "binaries")
     os.makedirs(adb_dst, exist_ok=True)
+    copied = 0
     for f in os.listdir(adb_bin_dir):
         src = os.path.join(adb_bin_dir, f)
         dst = os.path.join(adb_dst, f)
         if os.path.isfile(src):
-            shutil.copy2(src, dst)
-    print(f"  复制: adbutils/binaries/ ({len(os.listdir(adb_dst))} 个文件)")
+            try:
+                shutil.copy2(src, dst)
+                copied += 1
+            except PermissionError:
+                print(f"  ⚠️ 跳过（文件被占用）: {f}")
+    print(f"  复制: adbutils/binaries/ ({copied} 个文件)")
 
     # 复制 uiautomator2/assets/（含 u2.jar）
     # 从 Python 3.12 venv 中查找
@@ -133,8 +140,11 @@ def copy_resources(script_name: str):
         u2_dst = os.path.join(dist_dir, "uiautomator2", "assets")
         if os.path.exists(u2_dst):
             shutil.rmtree(u2_dst)
-        shutil.copytree(u2_assets, u2_dst)
-        print(f"  复制: uiautomator2/assets/ ({len(os.listdir(u2_dst))} 个文件)")
+        try:
+            shutil.copytree(u2_assets, u2_dst)
+            print(f"  复制: uiautomator2/assets/ ({len(os.listdir(u2_dst))} 个文件)")
+        except PermissionError:
+            print(f"  ⚠️ uiautomator2/assets/ 部分文件被占用，已跳过")
 
 
 def find_python():
@@ -166,6 +176,11 @@ def build(target_name: str):
         *COMMON_ARGS,
         t["script"],
     ]
+    # 如果配置了图标，添加图标参数
+    icon = t.get("icon")
+    if icon and os.path.isfile(icon):
+        cmd.insert(3, f"--windows-icon-from-ico={icon}")
+        print(f"  图标: {icon}")
     print(f"\n{'='*60}")
     print(f"  打包 {t['script']} → dist/{t['name']}.exe")
     print(f"{'='*60}\n")

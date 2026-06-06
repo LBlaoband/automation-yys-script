@@ -96,27 +96,32 @@ try:
             clicked = first
             time.sleep(random.uniform(1.5, 2.5))
             if first == "win":
-                count += 1
-                print(f"--- 战斗结束，已完成 {count} 次 ---")
-
-                if count >= next_pause_battle:
-                    pause = random.uniform(5, 15)
-                    print(f"[随机暂停] 休息 {pause:.1f} 秒")
-                    time.sleep(pause)
-                    next_pause_battle = count + random.randint(50, 100)
+                # 确认是否真的退出了战斗界面
+                if click_image(start_templates):
+                    count += 1
+                    print(f"--- 战斗结束，已完成 {count} 次 ---")
+                    if count >= next_pause_battle:
+                        pause = random.uniform(5, 15)
+                        print(f"[随机暂停] 休息 {pause:.1f} 秒")
+                        time.sleep(pause)
+                        next_pause_battle = count + random.randint(50, 100)
+                else:
+                    print("  [win 匹配但未确认退出，不计数]")
 
         elif click_image(second_t):
             clicked = second
             time.sleep(random.uniform(1.5, 2.5))
             if second == "win":
-                count += 1
-                print(f"--- 战斗结束，已完成 {count} 次 ---")
-
-                if count >= next_pause_battle:
-                    pause = random.uniform(5, 15)
-                    print(f"[随机暂停] 休息 {pause:.1f} 秒")
-                    time.sleep(pause)
-                    next_pause_battle = count + random.randint(50, 100)
+                if click_image(start_templates):
+                    count += 1
+                    print(f"--- 战斗结束，已完成 {count} 次 ---")
+                    if count >= next_pause_battle:
+                        pause = random.uniform(5, 15)
+                        print(f"[随机暂停] 休息 {pause:.1f} 秒")
+                        time.sleep(pause)
+                        next_pause_battle = count + random.randint(50, 100)
+                else:
+                    print("  [win 匹配但未确认退出，不计数]")
 
         # 连续检测同一个按钮超过 5 次，可能卡住了
         if clicked:
