@@ -35,11 +35,12 @@ uv run build.py all        # 打包全部
 
 - **main.py** — 命令行版主挂机脚本。连接模拟器 → 加载模板图片 → 循环截屏+模板匹配+点击，包含反检测随机化和异常保护逻辑。
 - **chapter28hard.py** — 困28副本专用挂机脚本。优先级驱动的状态机：胜利结算 > 进入副本 > 打首领 > 打经验怪 > 退出副本，支持自动跑图和宝箱跳过。
-- **gui.py** — GUI 版本（CustomTkinter）。支持配置端口（多开）、匹配阈值、运行时长，实时日志显示。
+- **gui.py** — GUI 版本（CustomTkinter）。支持配置端口（多开）、匹配阈值、运行时长、总次数上限、司机/打手定位，实时日志显示。
 - **shot.py** — 屏幕截图工具，文件名带时间戳（`shot_20260605_164416.png`），用于截取模拟器画面制作模板图片。
 - **path_helper.py** — 路径辅助模块，处理打包后 vs 开发模式的路径差异，自动设置 ADB 路径。
 - **build.py** — Nuitka 打包脚本，自动复制资源文件（模板图片、adb.exe、u2.jar）到输出目录。
 - **label_tool.py** — OpenCV 实现的简易图片标注工具，用于标注 YOLO 训练数据。鼠标拖拽画框，按键分类（1=start, 2=win），自动缩放适配屏幕。
+- **train.py** — YOLO 模型训练脚本。使用 ultralytics 训练目标检测模型，产出 `best.pt` 用于替代模板匹配。
 
 ### 资源文件
 
@@ -65,10 +66,11 @@ uv run build.py all        # 打包全部
 - 反检测机制：随机点击偏移（±5px）、随机暂停、随机运行时长（2-4h）、随机休息间隔。
 - 所有脚本入口处的初始化顺序必须为：`get_base_dir()` → `os.chdir()` → `setup_adb_path()` → `import uiautomator2`。`setup_adb_path()` 必须在 `import uiautomator2` 之前调用，否则打包后找不到 adb.exe。
 - `gui.py` 中的 `_run_loop_chapter28` 与 `chapter28hard.py` 逻辑基本一致，修改一处时需同步另一处。
+- **司机/打手定位**：司机模式匹配 start/win 两个模板（负责开始战斗），打手模式只匹配 win 模板（只需等待战斗结束）。
 
-## YOLO 训练（实验中）
+## YOLO 训练
 
-用于替代模板匹配，解决评分波动问题。当前在 `main.py` 上试验。
+用于替代模板匹配，解决评分波动问题。依赖 `ultralytics`（已在 `pyproject.toml` 中声明）。
 
 ```bash
 # 1. 截图（用 shot.py 或模拟器截图，保存到 yolo/）
@@ -77,8 +79,8 @@ uv run shot.py
 # 2. 标注（OpenCV 标注工具，画框 → 按1/2分类 → 按s保存）
 uv run label_tool.py
 
-# 3. 训练（需要额外安装 ultralytics：uv add ultralytics）
-# 标注完成后运行训练脚本，产出 best.pt 模型
+# 3. 训练（产出 best.pt 模型）
+uv run train.py
 ```
 
 ## 发送给其他人
