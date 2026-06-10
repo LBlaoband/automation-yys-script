@@ -92,7 +92,7 @@ class YysAutoApp(ctk.CTk):
         self.rest_check.pack(side="left", padx=(20, 0))
         self._toggle_rest()  # 初始化时根据默认值禁用/启用运行时长
 
-        # 第四行：总次数上限
+        # 第四行：总次数上限 + 检测延时
         row4 = ctk.CTkFrame(config_frame, fg_color="transparent")
         row4.pack(fill="x", padx=10, pady=(0, 10))
 
@@ -100,6 +100,12 @@ class YysAutoApp(ctk.CTk):
         self.limit_entry = ctk.CTkEntry(row4, width=80, placeholder_text="0 = 无限")
         self.limit_entry.pack(side="left", padx=(5, 0))
         self.limit_entry.insert(0, "0")
+
+        ctk.CTkLabel(row4, text="检测延时(秒):").pack(side="left", padx=(20, 0))
+        self.delay_entry = ctk.CTkEntry(row4, width=80, placeholder_text="≥0.5")
+        self.delay_entry.pack(side="left", padx=(5, 0))
+        self.delay_entry.insert(0, "1.5")
+        self.delay_entry.bind("<FocusOut>", self._validate_delay)
 
         # ── 按钮区域 ──
         btn_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -181,6 +187,29 @@ class YysAutoApp(ctk.CTk):
             self.runtime_menu.configure(state="normal")
         else:
             self.runtime_menu.configure(state="disabled")
+
+    def _validate_delay(self, event=None):
+        """验证延时输入框，确保最小值为0.8秒"""
+        try:
+            delay = float(self.delay_entry.get())
+            if delay < 0.8:
+                self.delay_entry.delete(0, "end")
+                self.delay_entry.insert(0, "0.8")
+                self.log("提示: 检测延时最小值为0.8秒，已自动调整")
+        except ValueError:
+            self.delay_entry.delete(0, "end")
+            self.delay_entry.insert(0, "1.5")
+            self.log("提示: 检测延时输入无效，已恢复默认值1.5秒")
+
+    def _get_delay(self):
+        """获取检测延时值（最小0.8秒），返回随机延时"""
+        try:
+            delay = float(self.delay_entry.get())
+            if delay < 0.8:
+                delay = 0.8
+        except ValueError:
+            delay = 1.5
+        return random.uniform(0.5, delay)
 
     def _update_timer(self):
         """每秒更新运行时长显示"""
@@ -375,6 +404,7 @@ class YysAutoApp(ctk.CTk):
         if association_templates:
             self.log(f"  意外弹窗模板: association x{len(association_templates)}")
         self.log(f"开始普通挂机（{role}）...")
+        self.log(f"检测延时设置: {self.delay_entry.get()}秒（实际延时在0-{self.delay_entry.get()}秒随机）")
 
         count = 0
         rest_threshold = random.randint(200, 250)
@@ -408,13 +438,13 @@ class YysAutoApp(ctk.CTk):
             # 优先处理意外弹窗
             if association_templates and self.click_image(association_templates, threshold, name="association", corner="top_right"):
                 self.log("  -> 关闭意外弹窗")
-                time.sleep(1.0)
+                time.sleep(self._get_delay())
                 continue
 
             if role == "打手":
                 # 打手模式：只检测 win
                 if self.click_image(win_templates, threshold, name="win"):
-                    time.sleep(random.uniform(1.5, 2.5))
+                    time.sleep(self._get_delay())
                     count += 1
                     self.count = count
                     self.update_count()
@@ -432,7 +462,7 @@ class YysAutoApp(ctk.CTk):
                     consecutive_count += 1
                     if consecutive_count > 30:
                         self.log("长时间未检测到 win，可能卡住")
-                time.sleep(random.uniform(1.0, 1.5))
+                time.sleep(self._get_delay())
                 continue
 
             # 司机模式：随机打乱检测顺序
@@ -446,7 +476,7 @@ class YysAutoApp(ctk.CTk):
             clicked = None
             if self.click_image(first_t, threshold, name=first):
                 clicked = first
-                time.sleep(random.uniform(1.5, 2.5))
+                time.sleep(self._get_delay())
                 if first == "win":
                     # 确认是否真的退出了战斗界面
                     if self.click_image(start_templates, threshold, name="start(确认)", do_click=False):
@@ -467,7 +497,7 @@ class YysAutoApp(ctk.CTk):
 
             elif self.click_image(second_t, threshold, name=second):
                 clicked = second
-                time.sleep(random.uniform(1.5, 2.5))
+                time.sleep(self._get_delay())
                 if second == "win":
                     if self.click_image(start_templates, threshold, name="start(确认)", do_click=False):
                         count += 1
@@ -506,7 +536,7 @@ class YysAutoApp(ctk.CTk):
                 count = 0
                 rest_threshold = random.randint(200, 250)
 
-            time.sleep(random.uniform(1.0, 1.5))
+            time.sleep(self._get_delay())
 
     # ── 困28副本模式（状态机）──
 
@@ -536,6 +566,7 @@ class YysAutoApp(ctk.CTk):
 
         self.log(f"模板加载完成，开始困28挂机（无视宝箱，打完秒退）...")
         self.log("确保游戏已开启：自动准备、自动换狗粮")
+        self.log(f"检测延时设置: {self.delay_entry.get()}秒（实际延时在0-{self.delay_entry.get()}秒随机）")
 
         count = 0
         idle_count = 0
@@ -566,13 +597,13 @@ class YysAutoApp(ctk.CTk):
             if tpl_association and self.click_image(tpl_association, threshold, name="association", corner="top_right"):
                 self.log("  -> 关闭意外弹窗")
                 idle_count = 0
-                time.sleep(1.0)
+                time.sleep(self._get_delay())
 
             elif self.click_image(tpl_win, threshold, name="win"):
-                time.sleep(random.uniform(1.5, 2.5))
+                time.sleep(self._get_delay())
                 self.click_relative(0.86, 0.83)
                 # 确认是否真的退出了战斗界面
-                time.sleep(2.0)
+                time.sleep(self._get_delay())
                 if self.click_image(tpl_chapter, threshold, name="chapter(确认)", do_click=False) or \
                    self.click_image(tpl_explore, threshold, name="explore(确认)", do_click=False) or \
                    self.click_image(tpl_exp, threshold, name="exp(确认)", do_click=False):
@@ -586,36 +617,36 @@ class YysAutoApp(ctk.CTk):
                 else:
                     self.log("  [win 匹配但未确认退出，不计数]")
                 idle_count = 0
-                time.sleep(1.0)
+                time.sleep(self._get_delay())
 
             elif self.click_image(tpl_chapter, threshold, name="chapter"):
                 self.log("  -> 选择章节")
                 idle_count = 0
-                time.sleep(2.0)
+                time.sleep(self._get_delay())
 
             elif self.click_image(tpl_explore, threshold, name="explore"):
                 self.log("  -> 进入副本")
                 idle_count = 0
-                time.sleep(2.5)
+                time.sleep(self._get_delay())
 
             elif self.click_image(tpl_boss, threshold, name="boss"):
                 self.log("  -> 发现首领，出击！")
                 idle_count = 0
-                time.sleep(10.0)
+                time.sleep(self._get_delay())
 
             elif self.click_image(tpl_exp, threshold, name="exp"):
                 self.log("  -> 发现经验怪，出击！")
                 idle_count = 0
-                time.sleep(5.0)
+                time.sleep(self._get_delay())
 
             elif tpl_chest and self.click_image(tpl_chest, threshold, name="chest", do_click=False):
                 self.log("  -> 确认首领已击败，退出副本！")
                 self.click_relative(0.05, 0.08)
-                time.sleep(1.0)
+                time.sleep(self._get_delay())
                 if tpl_confirm_exit:
                     self.click_image(tpl_confirm_exit, threshold, name="confirm_exit")
                 idle_count = 0
-                time.sleep(2.5)
+                time.sleep(self._get_delay())
 
             else:
                 idle_count += 1
@@ -626,9 +657,9 @@ class YysAutoApp(ctk.CTk):
                     ex, ey = int(width * 0.2), int(height * 0.5)
                     self.device.shell(f"input swipe {sx} {sy} {ex} {ey} 500")
                     idle_count = 0
-                    time.sleep(1.5)
+                    time.sleep(self._get_delay())
                 else:
-                    time.sleep(1.5)
+                    time.sleep(self._get_delay())
 
 
 if __name__ == "__main__":
