@@ -35,7 +35,7 @@ uv run build.py all        # 打包全部
 
 - **main.py** — 命令行版主挂机脚本。连接模拟器 → 加载模板图片 → 循环截屏+模板匹配+点击，包含反检测随机化和异常保护逻辑。
 - **chapter28hard.py** — 困28副本专用挂机脚本。优先级驱动的状态机：胜利结算 > 进入副本 > 打首领 > 打经验怪 > 退出副本，支持自动跑图和宝箱跳过。
-- **gui.py** — GUI 版本（CustomTkinter）。支持配置端口（多开）、匹配阈值、运行时长、总次数上限、司机/打手定位，实时日志显示。
+- **gui.py** — GUI 版本（CustomTkinter）。支持配置端口（多开）、匹配阈值、运行时长、总次数上限、司机/打手定位，实时日志显示。特性：模板缓存（避免重复加载）、线程安全配置读取（`_config` 字典）、`cv2.setNumThreads(1)` 限制 CPU 占用。
 - **shot.py** — 屏幕截图工具，文件名带时间戳（`shot_20260605_164416.png`），用于截取模拟器画面制作模板图片。
 - **path_helper.py** — 路径辅助模块，处理打包后 vs 开发模式的路径差异，自动设置 ADB 路径。
 - **build.py** — Nuitka 打包脚本，自动复制资源文件（模板图片、adb.exe、u2.jar）到输出目录。
@@ -67,6 +67,10 @@ uv run build.py all        # 打包全部
 - 所有脚本入口处的初始化顺序必须为：`get_base_dir()` → `os.chdir()` → `setup_adb_path()` → `import uiautomator2`。`setup_adb_path()` 必须在 `import uiautomator2` 之前调用，否则打包后找不到 adb.exe。
 - `gui.py` 中的 `_run_loop_chapter28` 与 `chapter28hard.py` 逻辑基本一致，修改一处时需同步另一处。
 - **司机/打手定位**：司机模式匹配 start/win 两个模板（负责开始战斗），打手模式只匹配 win 模板（只需等待战斗结束）。
+- **CPU 优化**：`gui.py` 使用 `cv2.setNumThreads(1)` 限制 OpenCV 线程数，防止多线程环境下 CPU 占用过高。
+- **线程安全**：`gui.py` 在启动时将 UI 配置读取到 `self._config` 字典，后台线程只读取缓存值，避免跨线程访问 Tkinter 控件导致闪退。
+- **模板缓存**：`gui.py` 的 `load_templates()` 使用 `self._template_cache` 缓存已加载的模板，避免重复启动时重复加载。
+- **延时配置**：普通挂机模式的检测延时受 UI 输入框控制（`random.uniform(0.5, delay)`），困28副本模式使用固定的、针对不同操作优化的延时（boss 10秒、exp 5秒、其他 1~2.5秒）。
 
 ## YOLO 训练
 
